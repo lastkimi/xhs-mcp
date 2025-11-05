@@ -10,7 +10,7 @@ import { serializeNoteDetail } from '../types/note.js';
 
 
 // 获取近期笔记列表（从笔记管理页面）
-async function getRecentNotes(page: Page): Promise<NoteDetail[]> {
+export async function getRecentNotes(page: Page): Promise<NoteDetail[]> {
   await page.goto('https://creator.xiaohongshu.com/new/note-manager', {
     waitUntil: 'domcontentloaded',
     timeout: 30000,
@@ -162,6 +162,42 @@ async function getInteractionCount(page: Page, card: any, type: string): Promise
 }
 
 // 主函数 - 获取近期笔记列表
+// 核心函数：获取笔记统计（返回原始数据）
+async function getNoteStatisticsRaw(): Promise<NoteDetail[]> {
+  return await withLoggedInPage(async (page) => {
+    return await getRecentNotes(page);
+  });
+}
+
+// MCP兼容函数：获取笔记统计（返回MCP格式）
+export async function getNoteStatistics(limit?: number): Promise<import('../mcp/format.js').MCPResponse> {
+  const { formatForMCP, formatErrorForMCP } = await import('../mcp/format.js');
+  try {
+    const data = await getNoteStatisticsRaw();
+    const limitedData = limit ? data.slice(0, limit) : data;
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            total: data.length,
+            limit: limit || data.length,
+            notes: limitedData,
+          }, null, 2),
+        },
+        {
+          type: 'text',
+          text: limitedData.map(note => serializeNoteDetail(note)).join('\n\n'),
+        },
+      ],
+    };
+  } catch (error) {
+    return formatErrorForMCP(error);
+  }
+}
+
+// CLI 命令函数
 export async function getNoteStatisticsCommand(): Promise<void> {
   try {
     console.log('🔍 检查登录状态...\n');
@@ -177,11 +213,17 @@ export async function getNoteStatisticsCommand(): Promise<void> {
 
   try {
     console.log('📥 获取近期笔记列表...\n');
-    const data = await withLoggedInPage(async (page) => {
-      return await getRecentNotes(page);
-    });
+    const { extractTextFromMCP } = await import('../mcp/format.js');
+    const mcpResponse = await getNoteStatistics();
+    
+    if (mcpResponse.isError) {
+      console.error(extractTextFromMCP(mcpResponse));
+      process.exit(1);
+    }
+    
+    const responseData = JSON.parse(mcpResponse.content[0].text);
+    const data = responseData.notes;
 
-    // 使用 serializeNoteDetail 来显示每篇笔记
     if (data.length === 0) {
       console.log('❌ 未找到笔记数据');
       return;

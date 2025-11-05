@@ -1,10 +1,13 @@
 // src/cli/get_note_detail_by_id.ts
+
+
 import { withLoggedInPage } from '../browser/browser.js';
 import { checkLoginState } from './check_login_state.js';
 import type { Page } from 'puppeteer';
 import { NoteDetail } from '../types/note.js';
 import { saveToCache, loadFromCache } from '../utils/cache.js';
 import { serializeNoteDetail } from '../types/note.js';
+
 
 // 检查缓存笔记是否内容完整
 function isNoteContentComplete(note: NoteDetail): boolean {
@@ -45,7 +48,7 @@ function mergeNoteData(cachedNote: NoteDetail, newPartialData: Partial<NoteDetai
 }
 
 // 获取笔记详情（只获取部分数据）
-async function getNoteDetailById(page: Page, noteId: string): Promise<Partial<NoteDetail> | null> {
+export async function getNoteDetailById(page: Page, noteId: string): Promise<Partial<NoteDetail> | null> {
   // 构建创作者中心编辑页URL
   const editUrl = `https://creator.xiaohongshu.com/publish/update?id=${noteId}`;
 
@@ -165,7 +168,86 @@ async function getNoteDetailById(page: Page, noteId: string): Promise<Partial<No
   return partialDetail;
 }
 
-// 主函数
+// 核心函数：获取笔记详情（返回原始数据）
+async function getNoteDetailRaw(noteId: string): Promise<NoteDetail | null> {
+  const cacheFilename = `notes/${noteId}.json`;
+  const cachedDetail = loadFromCache<NoteDetail>(cacheFilename);
+  
+  if (cachedDetail && isNoteContentComplete(cachedDetail)) {
+    return cachedDetail;
+  }
+
+  const partialDetail = await withLoggedInPage(async (page) => {
+    return await getNoteDetailById(page, noteId);
+  });
+
+  if (!partialDetail) {
+    return null;
+  }
+
+  const publicUrl = `https://www.xiaohongshu.com/explore/${noteId}`;
+  let finalDetail: NoteDetail;
+
+  if (cachedDetail) {
+    finalDetail = mergeNoteData(cachedDetail, partialDetail);
+  } else {
+    finalDetail = {
+      noteId,
+      title: partialDetail.title || '未知标题',
+      url: publicUrl,
+      publishTime: partialDetail.publishTime || '',
+      views: '0',
+      likes: '0',
+      comments: '0',
+      favorites: '0',
+      shares: '0',
+      content: partialDetail.content,
+      author: partialDetail.author,
+      coverImage: partialDetail.coverImage,
+      images: partialDetail.images,
+      location: partialDetail.location,
+      tags: partialDetail.tags,
+      exposure: '',
+      coverClickRate: '',
+      fansIncrease: '',
+      avgViewTime: '',
+      danmaku: '',
+      detailUrl: publicUrl,
+    };
+  }
+
+  saveToCache(cacheFilename, finalDetail);
+  return finalDetail;
+}
+
+// MCP兼容函数：获取笔记详情（返回MCP格式）
+export async function getNoteDetail(noteId: string): Promise<import('../mcp/format.js').MCPResponse> {
+  const { formatForMCP, formatErrorForMCP } = await import('../mcp/format.js');
+  
+  if (!noteId) {
+    return {
+      content: [{ type: 'text', text: '错误: 必须提供 noteId 参数。' }],
+      isError: true,
+    };
+  }
+  
+  try {
+    const detail = await getNoteDetailRaw(noteId);
+    
+    if (!detail) {
+      return {
+        content: [{ type: 'text', text: `错误: 无法获取笔记 ${noteId} 的详情。` }],
+        isError: true,
+      };
+    }
+    
+    return formatForMCP(detail, serializeNoteDetail);
+  } catch (error) {
+    return formatErrorForMCP(error);
+  }
+}
+
+// CLI 命令函数
 export async function getNoteDetailByIdCommand(noteId?: string): Promise<void> {
   // 检查是否提供了笔记ID
   if (!noteId) {
@@ -189,74 +271,30 @@ export async function getNoteDetailByIdCommand(noteId?: string): Promise<void> {
 
   try {
     const cacheFilename = `notes/${noteId}.json`;
-    
-    // 先读取缓存
     const cachedDetail = loadFromCache<NoteDetail>(cacheFilename);
     
-    // 如果缓存存在且内容完整，使用缓存
     if (cachedDetail && isNoteContentComplete(cachedDetail)) {
       console.log('📝 使用缓存的笔记详情...\n');
       console.log(serializeNoteDetail(cachedDetail));
       return;
     }
 
-    // 如果缓存不存在或内容不完整，从网络获取
     if (cachedDetail && !isNoteContentComplete(cachedDetail)) {
       console.log('📥 缓存内容不完整，从网络更新...\n');
     } else {
       console.log('📥 缓存未命中，从网络获取...\n');
     }
 
-    // 获取部分数据
-    const partialDetail = await withLoggedInPage(async (page) => {
-      return await getNoteDetailById(page, noteId);
-    });
-
-    if (!partialDetail) {
-      console.error('❌ 无法获取笔记详情，可能笔记不存在或页面结构已变化');
+    const { extractTextFromMCP } = await import('../mcp/format.js');
+    const mcpResponse = await getNoteDetail(noteId);
+    
+    if (mcpResponse.isError) {
+      console.error(extractTextFromMCP(mcpResponse));
       process.exit(1);
     }
 
-    // 构建公开链接
-    const publicUrl = `https://www.xiaohongshu.com/explore/${noteId}`;
-
-    let finalDetail: NoteDetail;
-
-    if (cachedDetail) {
-      // 合并数据：缓存数据 + 新获取的部分数据
-      finalDetail = mergeNoteData(cachedDetail, partialDetail);
-    } else {
-      // 如果没有缓存，创建新的完整数据
-      finalDetail = {
-        noteId,
-        title: partialDetail.title || '未知标题',
-        url: publicUrl,
-        publishTime: partialDetail.publishTime || '',
-        views: '0',
-        likes: '0',
-        comments: '0',
-        favorites: '0',
-        shares: '0',
-        content: partialDetail.content,
-        author: partialDetail.author,
-        coverImage: partialDetail.coverImage,
-        images: partialDetail.images,
-        location: partialDetail.location,
-        tags: partialDetail.tags,
-        exposure: '',
-        coverClickRate: '',
-        fansIncrease: '',
-        avgViewTime: '',
-        danmaku: '',
-        detailUrl: publicUrl,
-      };
-    }
-
-    // 保存合并后的数据到缓存
-    saveToCache(cacheFilename, finalDetail);
     console.log('💾 笔记详情已缓存\n');
-
-    console.log(serializeNoteDetail(finalDetail));
+    console.log(extractTextFromMCP(mcpResponse));
   } catch (error) {
     console.error('❌ 获取笔记详情失败:', error);
     if (error instanceof Error) {

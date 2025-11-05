@@ -6,7 +6,7 @@ import { UserRecentOperationData, serializeOperationData } from '../types/operat
 import { saveToCache, loadFromCache } from '../utils/cache.js';
 
 // 统一的页面数据获取器
-class XHSOperationDataFetcher {
+export class XHSOperationDataFetcher {
   constructor(private page: Page) {}
 
   async fetchAllData(): Promise<UserRecentOperationData> {
@@ -191,7 +191,37 @@ private transformToOperationData(
 }
 
 
-// 主函数
+// 核心函数：获取运营数据（返回原始数据）
+async function getOperationDataRaw(): Promise<UserRecentOperationData> {
+  const today = new Date().toISOString().split('T')[0];
+  const cacheFilename = `operation_data/${today}.json`;
+  const cachedData = loadFromCache<UserRecentOperationData>(cacheFilename);
+  
+  if (cachedData && cachedData.date === today) {
+    return cachedData;
+  }
+
+  const operationData = await withLoggedInPage(async (page) => {
+    const fetcher = new XHSOperationDataFetcher(page);
+    return await fetcher.fetchAllData();
+  });
+  
+  saveToCache(cacheFilename, operationData);
+  return operationData;
+}
+
+// MCP兼容函数：获取运营数据（返回MCP格式）
+export async function getOperationData(): Promise<import('../mcp/format.js').MCPResponse> {
+  const { formatForMCP, formatErrorForMCP } = await import('../mcp/format.js');
+  try {
+    const data = await getOperationDataRaw();
+    return formatForMCP(data, serializeOperationData);
+  } catch (error) {
+    return formatErrorForMCP(error);
+  }
+}
+
+// CLI 命令函数
 export async function getOperationDataCommand(): Promise<void> {
   try {
     console.log('🔍 检查登录状态...\n');
@@ -209,19 +239,24 @@ export async function getOperationDataCommand(): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
     const cacheFilename = `operation_data/${today}.json`;
     const cachedData = loadFromCache<UserRecentOperationData>(cacheFilename);
+    
     if (cachedData && cachedData.date === today) {
       console.log('📝 使用缓存的运营数据...\n');
       console.log(serializeOperationData(cachedData));
       return;
     }
+    
     console.log('📥 缓存未命中，从网络获取...\n');
-    const operationData = await withLoggedInPage(async (page) => {
-      const fetcher = new XHSOperationDataFetcher(page);
-      return await fetcher.fetchAllData();
-    });
-    saveToCache(cacheFilename, operationData);
+    const { extractTextFromMCP } = await import('../mcp/format.js');
+    const mcpResponse = await getOperationData();
+    
+    if (mcpResponse.isError) {
+      console.error(extractTextFromMCP(mcpResponse));
+      process.exit(1);
+    }
+    
     console.log('💾 运营数据已缓存\n');
-    console.log(serializeOperationData(operationData));
+    console.log(extractTextFromMCP(mcpResponse));
   } catch (error) {
     console.error('❌ 获取数据失败:', error);
     process.exit(1);
