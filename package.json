@@ -1,0 +1,40 @@
+{
+  "name": "xhs-mcp",
+  "version": "1.0.0",
+  "description": "小红书 MCP 服务器",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "xhs-login": "./dist/cli/login.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --clear-screen=false src/index.ts",
+    "start": "node dist/index.js",
+    "xhs": "tsx src/cli/cli.ts",
+    "xhs-cli": "tsx src/cli/cli.ts",
+    "test": "tsx src/cli/_test.ts",
+    "login": "npm run cli login",
+    "check-login": "npm run cli check-login"
+  },
+  "keywords": [
+    "mcp",
+    "xiaohongshu",
+    "xhs"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "jsqr": "^1.4.0",
+    "pngjs": "^7.0.0",
+    "puppeteer": "^24.28.0",
+    "qrcode-terminal": "^0.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/qrcode-terminal": "^0.12.2",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
