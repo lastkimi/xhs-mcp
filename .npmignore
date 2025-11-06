@@ -29,6 +29,8 @@ PUBLISH.md
 # 缓存和临时文件
 .cache/
 cache/
+XHS/
+xhs/
 temp-images/
 *.log
 

@@ -6,5 +6,5 @@ dist/
 *.tsbuildinfo
 cache/
 .cache/
-
-
+XHS/
+xhs/
