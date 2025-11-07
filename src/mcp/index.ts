@@ -24,6 +24,7 @@ import {
   handleGenerateCover,
   handleLogin,
   handleSaveExample,
+  handlePost,
 } from './handlers.js';
 import { loadFromCache } from '../utils/cache.js';
 import { Note } from '../types/note.js';
@@ -95,15 +96,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           (args as any)?.scheduledPublishTime
         );
       case 'xhs_generate_cover':
-        return await handleGenerateCover(
-          (args as any)?.title,
-          (args as any)?.templateId || '1'
-        );
+        return await handleGenerateCover((args as any)?.postName);
       case 'xhs_save_example':
         return await handleSaveExample(
           (args as any)?.filename,
           (args as any)?.content
         );
+      case 'xhs_post':
+        return await handlePost((args as any)?.postName);
       default:
         throw new Error(`未知的工具: ${name}`);
     }

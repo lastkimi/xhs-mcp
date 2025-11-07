@@ -1,6 +1,6 @@
 {
   "name": "xhs-cli",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "description": "面向个人创作者的小红书 CLI 工具和 MCP 服务器 - 帮助创作者管理、分析和发布小红书内容，支持自动生成封面图片",
   "type": "module",
   "main": "dist/mcp/index.js",

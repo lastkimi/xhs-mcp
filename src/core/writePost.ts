@@ -6,7 +6,7 @@ import { join, extname } from 'path';
 import { homedir } from 'os';
 import { POST_QUEUE_DIR } from '../config.js';
 import { titleToFilename } from '../utils/titleToFilename.js';
-import { generateCover } from '../Illustrate/generateCover.js';
+
 
 
 // 添加 post
@@ -14,7 +14,6 @@ export async function createPost(
     title: string,
     content: string,
     images?: string[],
-    textToCover?: boolean,//是否自动将标题转换为封面图片
     scheduledPublishTime?: string): Promise<string> {
     // 创建前验证
     if (!content || typeof content !== 'string') {
@@ -34,10 +33,6 @@ export async function createPost(
     }
     if (title && title.length > 20) {
         throw new Error('标题长度不能超过20个字');
-    }
-    // 验证图片 - 必须至少提供一张图片
-    if ((!images || images.length === 0) && !textToCover) {
-        throw new Error('小红书笔记必须至少包含一张图片，或者启用 textToCover 自动生成封面');
     }
     if (images && images.length > 9) {
         throw new Error('图片数量不能超过9张');
@@ -61,28 +56,8 @@ export async function createPost(
     const postName = getPostNameFromFilename(queueFilename);
     const postImageDir = getPostImageDir(postName);
     clearImageDir(postImageDir);
-
-
-
-
     let validImageCount = 0;
     const processedImagePaths: string[] = []; // 重命名变量避免冲突
-    // 如果启用了 textToCover，自动生成封面图片
-    if (textToCover && title) {
-        try {
-            console.error('🎨 正在生成封面图片...');
-            const coverPaths = await generateCover(title, postImageDir, '1', true);
-            if (coverPaths && coverPaths.length > 0) {
-                // 重命名为 0.png
-                const targetPath = join(postImageDir, `0.png`);
-                copyFileSync(coverPaths[0], targetPath);
-                processedImagePaths.push(targetPath);
-                validImageCount++;
-            }
-        } catch (error) {
-            console.error('❌ 封面图片生成失败:', error instanceof Error ? error.message : error);
-        }
-    }
     // 处理用户提供的图片
     if (images && images.length > 0) {
         const supportedExtensions = ['.png', '.jpg', '.jpeg', '.webp'];
@@ -116,17 +91,9 @@ export async function createPost(
             }
         }
     }
-    // 验证至少有一张有效的图片
-    if (validImageCount === 0) {
-        throw new Error('没有找到任何有效的图片文件。请提供至少一张本地图片文件（PNG、JPG、JPEG、WebP格式），或者启用 textToCover 自动生成封面');
-    }
     for (let i = 0; i < processedImagePaths.length; i++) {
         console.error(`   ${i}. ${processedImagePaths[i]}`);
     }
-
-
-
-
     const data: {
         title?: string;
         content: string;
@@ -172,6 +139,7 @@ function getPostImageDir(postName: string): string {
     return postImagesDir;
 }
 
+
 // 清空图片目录
 function clearImageDir(imageDir: string): void {
     if (!existsSync(imageDir)) {
@@ -187,7 +155,11 @@ function clearImageDir(imageDir: string): void {
     }
 }
 
+
 // 从文件名中提取post名称（去掉.json后缀）
 function getPostNameFromFilename(filename: string): string {
     return filename.replace(/\.json$/, '');
 }
+
+
+

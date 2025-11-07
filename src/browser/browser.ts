@@ -7,7 +7,6 @@ import { homedir, platform } from 'os';
 
 // 查找系统 Chrome 路径（跨平台支持）
 function findChromePath(): string | null {
-  // 优先使用环境变量指定的路径
   if (process.env.CHROME_PATH && existsSync(process.env.CHROME_PATH)) {
     return process.env.CHROME_PATH;
   }
@@ -76,6 +75,10 @@ export async function launchBrowser(headless: boolean = true, extraArgs: string[
     '--disable-ipc-flooding-protection',
     '--enable-features=NetworkService,NetworkServiceInProcess',
   ];
+  // 非无头模式时添加最大化参数
+  if (!headless) {
+    baseArgs.push('--start-maximized');
+  }
   // 如果找到了 Chrome 路径，使用它；否则让 Puppeteer 自动查找
   const launchOptions: any = {
     headless: headless,

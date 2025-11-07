@@ -29,7 +29,7 @@ export function getTools() {
     },
     {
       name: 'xhs_get_recent_notes',
-      description: '获取近期发布的笔记列表',
+      description: '获取近期已发布的笔记列表',
       inputSchema: {
         type: 'object',
         properties: {
@@ -79,7 +79,7 @@ export function getTools() {
     },
     {
       name: 'xhs_list_queue_posts',
-      description: '获取待发布的笔记列表',
+      description: '读取已经写好的，准备发布的笔记列表',
       inputSchema: {
         type: 'object',
         properties: {},
@@ -101,7 +101,7 @@ export function getTools() {
     },
     {
       name: 'xhs_create_or_update_post',
-      description: '创建或更新待发布的笔记，写完帖子可以调用这个命令进入队列',
+      description: '创建或更新待发布的笔记文件，添加到发布队列。创建后的笔记可以通过 post 命令发布到小红书。',
       inputSchema: {
         type: 'object',
         properties: {
@@ -113,13 +113,6 @@ export function getTools() {
             type: 'string',
             description: '笔记内容（必需）',
           },
-          images: {
-            type: 'array',
-            items: {
-              type: 'string',
-            },
-            description: '图片路径数组（可选）',
-          },
           tags: {
             type: 'array',
             items: {
@@ -127,17 +120,9 @@ export function getTools() {
             },
             description: '标签数组（可选），如 ["#MCP", "#AI"]',
           },
-          location: {
-            type: 'string',
-            description: '位置信息（可选）',
-          },
-          draft: {
-            type: 'boolean',
-            description: '是否保存为草稿（可选），默认为 false',
-          },
           scheduledPublishTime: {
             type: 'string',
-            description: '计划发布时间（可选），ISO 8601 格式，如 "2024-01-01T10:00:00Z"',
+            description: '计划发布时间（一般不需要，除非用户明确指定），ISO 8601 格式，如 "2024-01-01T10:00:00Z"',
           },
         },
         required: ['title', 'content'],
@@ -145,21 +130,30 @@ export function getTools() {
     },
     {
       name: 'xhs_generate_cover',
-      description: '根据标题生成小红书封面图片（支持Markdown格式的标题，如加粗、高亮等）',
+      description: '为指定的笔记生成发布需要的封面图片',
       inputSchema: {
         type: 'object',
         properties: {
-          title: {
+          postName: {
             type: 'string',
-            description: '笔记标题（支持Markdown格式，如 **加粗**、`代码`等）',
-          },
-          templateId: {
-            type: 'string',
-            description: '封面模板ID（默认为"1"）',
-            default: '1',
+            description: '笔记名称（queue文件名，不包含.json后缀）',
           },
         },
-        required: ['title'],
+        required: ['postName'],
+      },
+    },
+    {
+      name: 'xhs_post',
+      description: '发布指定的笔记到小红书。需要传入笔记的文件名（queue文件名，不包含.json后缀）',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          postName: {
+            type: 'string',
+            description: '笔记名称（queue文件名，不包含.json后缀）',
+          },
+        },
+        required: ['postName'],
       },
     },
     {

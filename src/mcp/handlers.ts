@@ -9,12 +9,12 @@ import { getNoteDetail } from '../core/get_note_detail.js';
 import { getRecentNotes } from '../core/get_recent_notes.js';
 import { getMyProfile } from '../core/get_my_profile.js';
 import { listQueuePost } from '../core/list_available_post.js';
-import { loadPostFromQueue } from '../core/post.js';
+import { loadPostFromQueue, postNote } from '../core/post.js';
 import { PostNoteParams } from '../types/post.js';
 import { createPost } from '../core/writePost.js';
+import { generateCoverForPost } from '../core/generate_cover.js';
 import { saveExample } from '../core/examples.js';
 import { titleToFilename } from '../utils/titleToFilename.js';
-import { generateCover } from '../Illustrate/generateCover.js';
 import { serializeNote, serializeNoteDetail } from '../types/note.js';
 import { serializeOperationData } from '../types/operationData.js';
 import { serializeUserProfile } from '../types/userProfile.js';
@@ -22,7 +22,7 @@ import { formatForMCP, formatErrorForMCP } from './format.js';
 import { existsSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { POST_QUEUE_DIR, COVER_IMAGES_DIR } from '../config.js';
+import { POST_QUEUE_DIR } from '../config.js';
 
 
 
@@ -292,7 +292,7 @@ export async function handleCreateOrUpdatePost(
     const queueFilename = titleToFilename(title);
     const queueFilePath = join(POST_QUEUE_DIR, queueFilename);
     const isUpdate = existsSync(queueFilePath);
-    const resultFilename = await createPost(title, content, images, textToCover, scheduledPublishTime);
+    const resultFilename = await createPost(title, content, images,scheduledPublishTime);
     return formatForMCP(
       {
         filename: resultFilename,
@@ -309,25 +309,19 @@ export async function handleCreateOrUpdatePost(
 
 
 // 生成封面图片
-export async function handleGenerateCover(title: string, templateId: string = '1') {
+export async function handleGenerateCover(postName: string) {
   try {
-    if (!title || typeof title !== 'string' || title.trim().length === 0) {
-      return formatErrorForMCP(new Error('标题是必需的且不能为空'));
+    if (!postName || typeof postName !== 'string' || postName.trim().length === 0) {
+      return formatErrorForMCP(new Error('post名称是必需的且不能为空'));
     }
-    // 使用缓存目录作为输出目录
-    const imagePath = await generateCover(title, COVER_IMAGES_DIR, templateId, true);
-    // 获取文件名
-    const filename = imagePath[0].split(/[/\\]/).pop() || '';
-    // 返回相对路径（相对于封面图片目录）
-    const relativePath = `covers/${filename}`;
+    const success = await generateCoverForPost(postName);
     return formatForMCP(
       {
-        imagePath: relativePath,
-        fullPath: imagePath,
-        templateId,
-        message: `封面已生成: ${relativePath}`,
+        success,
+        postName,
+        message: success ? `封面已成功生成` : `封面生成失败`,
       },
-      () => `✅ 封面已生成: ${relativePath}\n完整路径: ${imagePath}`
+      () => success ? `✅ 封面已成功生成` : `❌ 封面生成失败`
     );
   } catch (error) {
     return formatErrorForMCP(error);
@@ -348,6 +342,42 @@ export async function handleSaveExample(filename: string, content: string) {
     return formatForMCP(
       result,
       () => `✅ ${result.message}`
+    );
+  } catch (error) {
+    return formatErrorForMCP(error);
+  }
+}
+
+
+// 发布笔记
+export async function handlePost(postName: string) {
+  try {
+    if (!postName || typeof postName !== 'string' || postName.trim().length === 0) {
+      return formatErrorForMCP(new Error('笔记名称是必需的且不能为空'));
+    }
+    // 确保文件名包含 .json 后缀
+    const queueFilename = postName.endsWith('.json') ? postName : `${postName}.json`;
+    const result = await postNote(queueFilename);
+    return formatForMCP(
+      {
+        success: result.success,
+        noteId: result.noteId,
+        noteUrl: result.noteUrl,
+        message: result.message,
+      },
+      () => {
+        if (result.success) {
+          let msg = `✅ ${result.message}`;
+          if (result.noteId) {
+            msg += `\n笔记ID: ${result.noteId}`;
+          }
+          if (result.noteUrl) {
+            msg += `\n笔记链接: ${result.noteUrl}`;
+          }
+          return msg;
+        }
+        return `❌ ${result.message}`;
+      }
     );
   } catch (error) {
     return formatErrorForMCP(error);
