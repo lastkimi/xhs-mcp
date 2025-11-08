@@ -12,15 +12,14 @@ import { generateCover } from '../Illustrate/generateCover.js';
 
 // 为指定的 post 生成封面图片
 export async function generateCoverForPost(queueFilename: string): Promise<boolean> {
-    const filename = queueFilename.endsWith('.json') ? queueFilename : `${queueFilename}.json`;
+    const filename = queueFilename.endsWith('.txt') ? queueFilename : `${queueFilename}.txt`;
     const queueFilePath = join(POST_QUEUE_DIR, filename);
     if (!existsSync(queueFilePath)) {
         throw new Error(`发帖队列文件不存在: ${filename}`);
     }
-    // 读取 post 信息
-    const content = readFileSync(queueFilePath, 'utf-8');
-    const params = JSON.parse(content) as { title?: string; content: string };
-    if (!params.title) {
+    // 从文件名提取标题（去掉 .txt 后缀）
+    const title = filename.replace(/\.txt$/, '');
+    if (!title) {
         throw new Error(`Post ${filename} 没有标题，无法生成封面`);
     }
     // 获取 post 名称和图片目录
@@ -29,7 +28,7 @@ export async function generateCoverForPost(queueFilename: string): Promise<boole
     // 生成封面图片
     try {
         console.error(`🎨 正在为 post "${postName}" 生成封面图片...`);
-        const coverPaths = await generateCover(params.title, postImageDir, '1', true);
+        const coverPaths = await generateCover(title, postImageDir, '1', true);
         if (coverPaths && coverPaths.length > 0) {
             // 重命名为 0.png
             const targetPath = join(postImageDir, `0.png`);
@@ -55,7 +54,7 @@ function getPostImageDir(postName: string): string {
 }
 
 
-// 从文件名中提取post名称（去掉.json后缀）
+// 从文件名中提取post名称（去掉.txt后缀）
 function getPostNameFromFilename(filename: string): string {
-    return filename.replace(/\.json$/, '');
+    return filename.replace(/\.txt$/, '');
 }

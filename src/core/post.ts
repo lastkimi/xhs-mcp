@@ -57,21 +57,6 @@ function validatePostParams(params: PostNoteParams): void {
             throw new Error('标签数量不能超过10个');
         }
     }
-    // 验证计划发布时间（如果提供）
-    if (params.scheduledPublishTime !== undefined) {
-        if (typeof params.scheduledPublishTime !== 'string') {
-            throw new Error('计划发布时间必须是字符串');
-        }
-        const publishTime = new Date(params.scheduledPublishTime);
-        if (isNaN(publishTime.getTime())) {
-            throw new Error('计划发布时间格式无效，请使用ISO 8601格式');
-        }
-        // 验证是否在未来时间
-        const now = new Date();
-        if (publishTime <= now) {
-            throw new Error('计划发布时间必须是将来的时间');
-        }
-    }
 }
 
 
@@ -127,13 +112,17 @@ export function loadPostFromQueue(filename: string): PostNoteParams {
         throw new Error(`发帖队列文件不存在: ${queueFilePath}`);
     }
     try {
+        // 从文件名提取标题（去掉 .txt 后缀）
+        const title = filename.replace(/\.txt$/, '');
+        // 读取文件内容作为笔记内容
         const content = readFileSync(queueFilePath, 'utf-8');
-        const params = JSON.parse(content) as PostNoteParams;
-        // 验证必需字段
-        if (!params.content || typeof params.content !== 'string') {
-            throw new Error('JSON 文件必须包含 content 字段');
+        if (!content || content.trim().length === 0) {
+            throw new Error('文件内容为空');
         }
-        return params;
+        return {
+            title,
+            content,
+        };
     } catch (error) {
         if (error instanceof Error && error.message.includes('不存在')) {
             throw error;
@@ -144,7 +133,7 @@ export function loadPostFromQueue(filename: string): PostNoteParams {
 
 
 
-// 将已发布的文件移动到 posted 目录（添加 postedAt 字段）
+// 将已发布的文件移动到 posted 目录
 function moveToPosted(filename: string): void {
     try {
         if (!existsSync(POST_POSTED_DIR)) {
@@ -156,13 +145,9 @@ function moveToPosted(filename: string): void {
             console.error('⚠️  队列文件不存在，无法移动:', queueFilePath);
             return;
         }
-        // 读取并更新数据
+        // 直接移动文件（TXT 文件不需要修改）
         const content = readFileSync(queueFilePath, 'utf-8');
-        const data = JSON.parse(content);
-        data.postedAt = new Date().toISOString();
-        // 写入更新后的数据到目标文件
-        const updatedContent = JSON.stringify(data, null, 2);
-        writeFileSync(postedFilePath, updatedContent, 'utf-8');
+        writeFileSync(postedFilePath, content, 'utf-8');
         // 删除原文件
         unlinkSync(queueFilePath);
         console.error(`✅ 已发布的文件已移动到: ${postedFilePath}`);
@@ -171,9 +156,9 @@ function moveToPosted(filename: string): void {
     }
 }
 
-// 从文件名中提取post名称（去掉.json后缀）
+// 从文件名中提取post名称（去掉.txt后缀）
 function getPostNameFromFilename(filename: string): string {
-    return filename.replace(/\.json$/, '');
+    return filename.replace(/\.txt$/, '');
 }
 
 

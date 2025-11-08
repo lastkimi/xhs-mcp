@@ -92,8 +92,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           (args as any)?.title,
           (args as any)?.content,
           (args as any)?.images,
-          (args as any)?.textToCover,
-          (args as any)?.scheduledPublishTime
+          (args as any)?.textToCover
         );
       case 'xhs_generate_cover':
         return await handleGenerateCover((args as any)?.postName);

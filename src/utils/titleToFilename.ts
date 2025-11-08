@@ -6,7 +6,7 @@ export function titleToFilename(title: string): string {
         .replace(/[^\w\u4e00-\u9fa5-]/g, '')  // 只保留字母、数字、中文和连字符
         .replace(/-+/g, '-')            // 将多个连字符合并为一个
         .replace(/^-|-$/g, '');         // 移除开头和结尾的连字符
-    // 限制文件名长度（保留 .json 扩展名的空间）
+    // 限制文件名长度（保留 .txt 扩展名的空间）
     if (filename.length > 200) {
         filename = filename.substring(0, 200);
     }
@@ -14,5 +14,5 @@ export function titleToFilename(title: string): string {
     if (!filename) {
         filename = 'untitled';
     }
-    return `${filename}.json`;
+    return `${filename}.txt`;
 }

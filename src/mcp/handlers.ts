@@ -219,9 +219,6 @@ function serializeQueuePostDetail(params: PostNoteParams, filename: string): str
       lines.push(`  ${index + 1}. ${img}`);
     });
   }
-  if (params.scheduledPublishTime) {
-    lines.push(`计划发布时间: ${params.scheduledPublishTime}`);
-  }
   lines.push('='.repeat(40));
   return lines.join('\n');
 }
@@ -279,7 +276,6 @@ export async function handleCreateOrUpdatePost(
   content: string,
   images?: string[],
   textToCover?: boolean,
-  scheduledPublishTime?: string,
 ) {
   try {
     if (!title || typeof title !== 'string' || title.trim().length === 0) {
@@ -292,7 +288,7 @@ export async function handleCreateOrUpdatePost(
     const queueFilename = titleToFilename(title);
     const queueFilePath = join(POST_QUEUE_DIR, queueFilename);
     const isUpdate = existsSync(queueFilePath);
-    const resultFilename = await createPost(title, content, images,scheduledPublishTime);
+    const resultFilename = await createPost(title, content, images);
     return formatForMCP(
       {
         filename: resultFilename,
@@ -355,8 +351,8 @@ export async function handlePost(postName: string) {
     if (!postName || typeof postName !== 'string' || postName.trim().length === 0) {
       return formatErrorForMCP(new Error('笔记名称是必需的且不能为空'));
     }
-    // 确保文件名包含 .json 后缀
-    const queueFilename = postName.endsWith('.json') ? postName : `${postName}.json`;
+    // 确保文件名包含 .txt 后缀
+    const queueFilename = postName.endsWith('.txt') ? postName : `${postName}.txt`;
     const result = await postNote(queueFilename);
     return formatForMCP(
       {

@@ -120,7 +120,7 @@ const commands: Record<string, () => Promise<void>> = {
       }
     } else {
       const filename = commandArgs[0];
-      queueFilename = filename.endsWith('.json') ? filename : `${filename}.json`;
+      queueFilename = filename.endsWith('.txt') ? filename : `${filename}.txt`;
     }
     try {
       const result = await postNote(queueFilename);
@@ -153,13 +153,12 @@ const commands: Record<string, () => Promise<void>> = {
     }
     await setupMCP(targets.length > 0 ? targets : undefined);
   },
-'write-post': async () => {
+  'write-post': async () => {
     // 解析命令行参数
     let title = '';
     let content = '';
     const images: string[] = [];
     let textToCover = false;
-    let scheduledPublishTime: string | undefined;
     
     // 解析参数
     for (let i = 0; i < commandArgs.length; i++) {
@@ -172,14 +171,11 @@ const commands: Record<string, () => Promise<void>> = {
         images.push(commandArgs[++i]);
       } else if (arg === '--text-to-cover') {
         textToCover = true;
-      } else if (arg === '--scheduled-time' && i + 1 < commandArgs.length) {
-        scheduledPublishTime = commandArgs[++i];
       } else if (arg === '--help' || arg === '-h') {
-        console.error('使用方法: xhs write-post --title "标题" --content "内容" [--text-to-cover] [--image 图片路径1] [--image 图片路径2] [--scheduled-time "YYYY-MM-DD HH:MM"]');
+        console.error('使用方法: xhs write-post --title "标题" --content "内容" [--text-to-cover] [--image 图片路径1] [--image 图片路径2]');
         console.error('示例:');
         console.error('  xhs write-post --title "我的笔记" --content "这是笔记内容" --image ./1.jpg --image ./2.png');
         console.error('  xhs write-post --title "我的笔记" --content "这是笔记内容" --text-to-cover');
-        console.error('  xhs write-post --title "我的笔记" --content "这是笔记内容" --text-to-cover --image ./1.jpg --scheduled-time "2024-01-01 10:00"');
         return;
       }
     }
@@ -187,9 +183,7 @@ const commands: Record<string, () => Promise<void>> = {
       const filename =await createPost(
         title,
         content,
-        images.length > 0 ? images : undefined,
-        textToCover,
-        scheduledPublishTime
+        images.length > 0 ? images : undefined
       );
       console.error(`✅ 笔记已成功创建: ${filename}`);
     } catch (error) {

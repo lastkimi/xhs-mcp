@@ -13,8 +13,7 @@ import { titleToFilename } from '../utils/titleToFilename.js';
 export async function createPost(
     title: string,
     content: string,
-    images?: string[],
-    scheduledPublishTime?: string): Promise<string> {
+    images?: string[]): Promise<string> {
     // 创建前验证
     if (!content || typeof content !== 'string') {
         throw new Error('content 字段是必需的且必须是字符串');
@@ -36,16 +35,6 @@ export async function createPost(
     }
     if (images && images.length > 9) {
         throw new Error('图片数量不能超过9张');
-    }
-    if (scheduledPublishTime) {
-        const publishTime = new Date(scheduledPublishTime);
-        if (isNaN(publishTime.getTime())) {
-            throw new Error('计划发布时间格式无效，请使用ISO 8601格式');
-        }
-        const now = new Date();
-        if (publishTime <= now) {
-            throw new Error('计划发布时间必须是将来的时间');
-        }
     }
     if (!existsSync(POST_QUEUE_DIR)) {
         mkdirSync(POST_QUEUE_DIR, { recursive: true });
@@ -94,22 +83,9 @@ export async function createPost(
     for (let i = 0; i < processedImagePaths.length; i++) {
         console.error(`   ${i}. ${processedImagePaths[i]}`);
     }
-    const data: {
-        title?: string;
-        content: string;
-        scheduledPublishTime?: string;
-    } = {
-        content,
-    };
-    if (title) {
-        data.title = title;
-    }
-    if (scheduledPublishTime) {
-        data.scheduledPublishTime = scheduledPublishTime;
-    }
     try {
-        const fileContent = JSON.stringify(data, null, 2);
-        writeFileSync(queueFilePath, fileContent, 'utf-8');
+        // 直接保存内容为 TXT 文件
+        writeFileSync(queueFilePath, content, 'utf-8');
         // 创建后验证
         if (!existsSync(queueFilePath)) {
             throw new Error('文件创建失败');
@@ -119,8 +95,7 @@ export async function createPost(
             throw new Error('文件内容为空');
         }
         const fileContentStr = readFileSync(queueFilePath, 'utf-8');
-        const parsedData = JSON.parse(fileContentStr);
-        if (!parsedData.content || typeof parsedData.content !== 'string') {
+        if (!fileContentStr || fileContentStr.trim().length === 0) {
             throw new Error('文件内容验证失败');
         }
         return queueFilename;
@@ -156,9 +131,9 @@ function clearImageDir(imageDir: string): void {
 }
 
 
-// 从文件名中提取post名称（去掉.json后缀）
+// 从文件名中提取post名称（去掉.txt后缀）
 function getPostNameFromFilename(filename: string): string {
-    return filename.replace(/\.json$/, '');
+    return filename.replace(/\.txt$/, '');
 }
 
 

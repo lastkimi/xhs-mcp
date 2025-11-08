@@ -7,7 +7,6 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 import { POST_QUEUE_DIR } from '../config.js';
-import { PostNoteParams } from '../types/post.js';
 
 
 // 列出所有待发布的帖子
@@ -17,18 +16,19 @@ export function listQueuePost(): Array<{ filename: string; title?: string; conte
     }
     try {
         const files = readdirSync(POST_QUEUE_DIR);
-        const jsonFiles = files.filter(file => file.endsWith('.json'));
+        const txtFiles = files.filter(file => file.endsWith('.txt'));
         const posts: Array<{ filename: string; title?: string; content: string; createdAt: Date; size: number }> = [];
-        for (const file of jsonFiles) {
+        for (const file of txtFiles) {
             const filePath = join(POST_QUEUE_DIR, file);
             try {
                 const stats = statSync(filePath);
                 const content = readFileSync(filePath, 'utf-8');
-                const params = JSON.parse(content) as PostNoteParams;
+                // 从文件名提取标题（去掉 .txt 后缀）
+                const title = file.replace(/\.txt$/, '');
                 posts.push({
                     filename: file,
-                    title: params.title,
-                    content: params.content,
+                    title: title,
+                    content: content,
                     createdAt: stats.birthtime,
                     size: stats.size,
                 });

@@ -1,6 +1,6 @@
 {
   "name": "xhs-cli",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "面向个人创作者的小红书 CLI 工具和 MCP 服务器 - 帮助创作者管理、分析和发布小红书内容，支持自动生成封面图片",
   "type": "module",
   "main": "dist/mcp/index.js",
@@ -63,12 +63,12 @@
     "pngjs": "^7.0.0",
     "puppeteer-core": "^24.29.1",
     "qrcode-terminal": "^0.12.0",
-    "react": "^18.2.0",
-    "satori": "^0.1.1"
+    "react": "^19.2.0",
+    "satori": "^0.18.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.5",
-    "@types/node": "^20.19.24",
+    "@types/node": "^24.10.0",
     "@types/open": "^6.1.0",
     "@types/qrcode-terminal": "^0.12.2",
     "@types/react": "^19.2.2",

@@ -93,7 +93,7 @@ export function getTools() {
         properties: {
           filename: {
             type: 'string',
-            description: '待发布笔记的文件名（.json文件）',
+            description: '待发布笔记的文件名（.txt文件）',
           },
         },
         required: ['filename'],
@@ -120,10 +120,6 @@ export function getTools() {
             },
             description: '标签数组（可选），如 ["#MCP", "#AI"]',
           },
-          scheduledPublishTime: {
-            type: 'string',
-            description: '计划发布时间（一般不需要，除非用户明确指定），ISO 8601 格式，如 "2024-01-01T10:00:00Z"',
-          },
         },
         required: ['title', 'content'],
       },
@@ -136,7 +132,7 @@ export function getTools() {
         properties: {
           postName: {
             type: 'string',
-            description: '笔记名称（queue文件名，不包含.json后缀）',
+            description: '笔记名称（queue文件名，不包含.txt后缀）',
           },
         },
         required: ['postName'],
@@ -144,13 +140,13 @@ export function getTools() {
     },
     {
       name: 'xhs_post',
-      description: '发布指定的笔记到小红书。需要传入笔记的文件名（queue文件名，不包含.json后缀）',
+      description: '发布指定的笔记到小红书。需要传入笔记的文件名（queue文件名，不包含.txt后缀）',
       inputSchema: {
         type: 'object',
         properties: {
           postName: {
             type: 'string',
-            description: '笔记名称（queue文件名，不包含.json后缀）',
+            description: '笔记名称（queue文件名，不包含.txt后缀）',
           },
         },
         required: ['postName'],
