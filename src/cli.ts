@@ -15,6 +15,7 @@ import { serializeOperationData } from './types/operationData.js';
 import { serializeUserProfile } from './types/userProfile.js';
 import { serializeNote, serializeNoteDetail } from './types/note.js';
 import { setupMCP } from './scripts/setup_mcp.js';
+import { logout } from './core/logout.js';
 
 
 
@@ -35,6 +36,14 @@ const commands: Record<string, () => Promise<void>> = {
     } else {
       console.error('❌ 登录失败\n');
       process.exit(1);
+    }
+  },
+  'logout': async () => {
+    const result = await logout();
+    if (result.removed) {
+      console.error('✅ 已清除浏览器登录缓存，账号已退出\n');
+    } else {
+      console.error('ℹ️ 未找到缓存文件，当前无登录状态\n');
     }
   },
   'check-login': async () => {
@@ -200,6 +209,7 @@ const commands: Record<string, () => Promise<void>> = {
 function showHelp() {
   const commandList = [
     { cmd: 'login', desc: '登录小红书' },
+    { cmd: 'logout', desc: '退出登录并清除缓存' },
     { cmd: 'check-login', desc: '检查登录状态' },
     { cmd: 'get-my-profile', desc: '获取用户资料' },
     { cmd: 'get-operation-data', desc: '获取近期笔记运营数据' },
