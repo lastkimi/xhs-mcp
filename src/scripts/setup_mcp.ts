@@ -1,4 +1,4 @@
-// MCP 服务器自动配置脚本 - 支持 Claude Desktop 和 Cursor
+// MCP 服务器自动配置脚本 - 支持 Claude Desktop、Cursor 和 Trae
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
 import { join, dirname, resolve } from 'path';
 import { homedir, platform } from 'os';
@@ -49,6 +49,13 @@ function getClaudeDesktopConfigPath(): string {
 function getCursorConfigPath(): string {
   // Cursor 的配置文件路径是 ~/.cursor/mcp.json（所有平台统一）
   return join(homedir(), '.cursor', 'mcp.json');
+}
+
+
+// 获取 Trae 配置文件路径
+function getTraeConfigPath(): string {
+  // Trae 的配置文件路径是 ~/.trae/mcp.json（所有平台统一）
+  return join(homedir(), '.trae', 'mcp.json');
 }
 
 
@@ -134,6 +141,34 @@ function setupCursor(projectPath: string): boolean {
 }
 
 
+// 配置 Trae
+function setupTrae(projectPath: string): boolean {
+  try {
+    console.log('\n🤖 配置 Trae...');
+    const configPath = getTraeConfigPath();
+    console.log(`📁 配置文件路径: ${configPath}`);
+    const existingConfig = readExistingConfig(configPath);
+    const config = {
+      ...existingConfig,
+      mcpServers: {
+        ...(existingConfig.mcpServers || {}),
+        'xhs-mcp': {
+          command: 'node',
+          args: [projectPath],
+          env: {},
+        },
+      },
+    };
+    writeConfig(configPath, config);
+    console.log('✅ Trae 配置完成！');
+    return true;
+  } catch (error) {
+    console.error('❌ Trae 配置失败:', error instanceof Error ? error.message : error);
+    return false;
+  }
+}
+
+
 // 检查并构建项目
 function ensureBuilt(): void {
   const projectRoot = resolve(__dirname, '..', '..');
@@ -163,7 +198,7 @@ function ensureBuilt(): void {
 
 
 // 交互式询问用户要配置的客户端
-async function askUserForTargets(): Promise<('claude' | 'cursor')[]> {
+async function askUserForTargets(): Promise<('claude' | 'cursor' | 'trae')[]> {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -172,24 +207,27 @@ async function askUserForTargets(): Promise<('claude' | 'cursor')[]> {
     console.log('请选择要配置的 MCP 客户端：\n');
     console.log('  1. Claude Desktop');
     console.log('  2. Cursor');
-    console.log('  3. 全部（Claude Desktop + Cursor）');
+    console.log('  3. Trae');
+    console.log('  4. 全部（Claude Desktop + Cursor + Trae）');
     console.log('  0. 取消\n');
-    rl.question('请输入选项 (1/2/3/0): ', (answer) => {
+    rl.question('请输入选项 (1/2/3/4/0): ', (answer) => {
       rl.close();
       const choice = answer.trim();
-      const targets: ('claude' | 'cursor')[] = [];
+      const targets: ('claude' | 'cursor' | 'trae')[] = [];
       if (choice === '1') {
         targets.push('claude');
       } else if (choice === '2') {
         targets.push('cursor');
       } else if (choice === '3') {
-        targets.push('claude', 'cursor');
+        targets.push('trae');
+      } else if (choice === '4') {
+        targets.push('claude', 'cursor', 'trae');
       } else if (choice === '0') {
         console.log('已取消配置');
         process.exit(0);
       } else {
         console.log('无效选项，默认配置全部客户端');
-        targets.push('claude', 'cursor');
+        targets.push('claude', 'cursor', 'trae');
       }
       resolve(targets);
     });
@@ -198,7 +236,7 @@ async function askUserForTargets(): Promise<('claude' | 'cursor')[]> {
 
 
 // 主函数
-export async function setupMCP(targets?: ('claude' | 'cursor')[]): Promise<void> {
+export async function setupMCP(targets?: ('claude' | 'cursor' | 'trae')[]): Promise<void> {
   try {
     console.log('🚀 开始配置 MCP 服务器...\n');
     // 确保项目已构建
@@ -207,7 +245,7 @@ export async function setupMCP(targets?: ('claude' | 'cursor')[]): Promise<void>
     const projectPath = getProjectPath();
     console.log(`📦 项目路径: ${projectPath}\n`);
     // 如果没有指定目标，询问用户
-    let targetsToSetup: ('claude' | 'cursor')[];
+    let targetsToSetup: ('claude' | 'cursor' | 'trae')[];
     if (targets && targets.length > 0) {
       targetsToSetup = targets;
     } else {
@@ -225,6 +263,11 @@ export async function setupMCP(targets?: ('claude' | 'cursor')[]): Promise<void>
         successCount++;
       }
     }
+    if (targetsToSetup.includes('trae')) {
+      if (setupTrae(projectPath)) {
+        successCount++;
+      }
+    }
     // 输出结果
     if (successCount > 0) {
       console.log('\n' + '='.repeat(60));
@@ -237,6 +280,10 @@ export async function setupMCP(targets?: ('claude' | 'cursor')[]): Promise<void>
       if (targetsToSetup.includes('cursor')) {
         console.log('   1. 重启 Cursor 使配置生效');
         console.log('   2. 在 Cursor 中打开 AI 面板（Cmd/Ctrl + L）');
+      }
+      if (targetsToSetup.includes('trae')) {
+        console.log('   1. 重启 Trae 使配置生效');
+        console.log('   2. 在 Trae 中打开 AI 面板');
       }
       console.log('   3. 尝试使用工具，例如："检查我的小红书登录状态"');
       console.log('\n💡 提示: 如果未登录，请先运行: npm run xhs login');
@@ -267,7 +314,7 @@ const isMainModule = process.argv[1] && (
 );
 if (isMainModule) {
   const args = process.argv.slice(2);
-  const targets: ('claude' | 'cursor')[] = [];
+  const targets: ('claude' | 'cursor' | 'trae')[] = [];
   // 如果指定了命令行参数，使用参数；否则会询问用户
   if (args.includes('--claude')) {
     targets.push('claude');
@@ -275,8 +322,11 @@ if (isMainModule) {
   if (args.includes('--cursor')) {
     targets.push('cursor');
   }
+  if (args.includes('--trae')) {
+    targets.push('trae');
+  }
   if (args.includes('--all')) {
-    targets.push('claude', 'cursor');
+    targets.push('claude', 'cursor', 'trae');
   }
   // 如果指定了参数，使用参数；否则传入 undefined 让函数询问用户
   setupMCP(targets.length > 0 ? targets : undefined).catch(console.error);
