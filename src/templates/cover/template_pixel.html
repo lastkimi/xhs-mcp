@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>像素风封面</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            width: 1080px;
+            height: 1620px;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            width: 1080px;
+            height: 1620px;
+            background: linear-gradient(135deg, #ffb6c1 0%, #ffc0cb 25%, #ff69b4 50%, #ff1493 75%, #dc143c 100%);
+            font-family: 'Courier New', 'Courier', monospace;
+            position: relative;
+            overflow: hidden;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        
+        /* 像素粒子背景 */
+        .pixel-particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .pixel-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.8);
+            animation: pixelFloat 8s linear infinite;
+        }
+        
+        .pixel-particle:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; }
+        .pixel-particle:nth-child(2) { left: 20%; top: 40%; animation-delay: 1s; }
+        .pixel-particle:nth-child(3) { left: 30%; top: 60%; animation-delay: 2s; }
+        .pixel-particle:nth-child(4) { left: 40%; top: 80%; animation-delay: 3s; }
+        .pixel-particle:nth-child(5) { left: 50%; top: 30%; animation-delay: 4s; }
+        .pixel-particle:nth-child(6) { left: 60%; top: 50%; animation-delay: 5s; }
+        .pixel-particle:nth-child(7) { left: 70%; top: 70%; animation-delay: 6s; }
+        .pixel-particle:nth-child(8) { left: 80%; top: 90%; animation-delay: 7s; }
+        
+        @keyframes pixelFloat {
+            0% { transform: translateY(1620px) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+        
+        /* 主容器 */
+        .main-container {
+            position: relative;
+            z-index: 10;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        /* 像素对话框 */
+        .pixel-dialog {
+            background: #ffffff;
+            border: 8px solid #333333;
+            border-radius: 0;
+            padding: 4rem;
+            text-align: center;
+            max-width: 900px;
+            width: 90%;
+            position: relative;
+            box-shadow: 
+                12px 12px 0 #666666,
+                24px 24px 0 #999999;
+        }
+        
+        .pixel-dialog::before {
+            content: '';
+            position: absolute;
+            bottom: -30px;
+            right: 80px;
+            width: 0;
+            height: 0;
+            border-left: 30px solid transparent;
+            border-right: 30px solid transparent;
+            border-top: 30px solid #ffffff;
+            border-bottom: 30px solid transparent;
+            filter: drop-shadow(6px 6px 0 #333333);
+        }
+        
+        /* 像素标题 */
+        .pixel-title {
+            font-family: 'Courier New', monospace;
+            font-size: 4.5rem;
+            font-weight: 900;
+            color: #ff1493;
+            text-shadow: 
+                4px 4px 0 #ffffff,
+                8px 8px 0 #ffc0cb;
+            margin-bottom: 3rem;
+            letter-spacing: 4px;
+            line-height: 1.2;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        /* 像素装饰元素 */
+        .pixel-decoration {
+            position: absolute;
+            font-size: 3rem;
+            z-index: 15;
+            animation: pixelSparkle 3s ease-in-out infinite;
+        }
+        
+        .pixel-cat-left { top: 15%; left: 8%; animation-delay: 0s; }
+        .pixel-cat-right { top: 15%; right: 8%; animation-delay: 1.5s; }
+        .pixel-flower-1 { top: 25%; left: 12%; animation-delay: 0.5s; }
+        .pixel-flower-2 { top: 35%; right: 15%; animation-delay: 1s; }
+        .pixel-heart-1 { top: 60%; left: 10%; animation-delay: 1.5s; }
+        .pixel-heart-2 { top: 70%; right: 12%; animation-delay: 2s; }
+        .pixel-star-1 { top: 45%; left: 6%; animation-delay: 2.5s; }
+        .pixel-star-2 { top: 55%; right: 8%; animation-delay: 3s; }
+        
+        @keyframes pixelSparkle {
+            0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.7; }
+            50% { transform: scale(1.3) rotate(180deg); opacity: 1; }
+        }
+        
+        /* 内容区域 */
+        .content-area {
+            background: #f8f8f8;
+            border: 4px solid #cccccc;
+            border-radius: 0;
+            min-height: 300px;
+            margin: 2rem 0;
+            padding: 2.5rem;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .content-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(45deg, #ffffff 25%, transparent 25%),
+                linear-gradient(-45deg, #ffffff 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #ffffff 75%),
+                linear-gradient(-45deg, transparent 75%, #ffffff 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            opacity: 0.1;
+            pointer-events: none;
+        }
+        
+        .content-placeholder {
+            color: #666666;
+            font-size: 1.8rem;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- 像素粒子背景 -->
+    <div class="pixel-particles">
+        <div class="pixel-particle"></div>
+        <div class="pixel-particle"></div>
+        <div class="pixel-particle"></div>
+        <div class="pixel-particle"></div>
+        <div class="pixel-particle"></div>
+        <div class="pixel-particle"></div>
+        <div class="pixel-particle"></div>
+        <div class="pixel-particle"></div>
+    </div>
+    
+    <!-- 像素装饰元素 -->
+    <div class="pixel-decoration pixel-cat-left">🐱</div>
+    <div class="pixel-decoration pixel-cat-right">🐈</div>
+    <div class="pixel-decoration pixel-flower-1">🌸</div>
+    <div class="pixel-decoration pixel-flower-2">🌺</div>
+    <div class="pixel-decoration pixel-heart-1">💖</div>
+    <div class="pixel-decoration pixel-heart-2">💕</div>
+    <div class="pixel-decoration pixel-star-1">⭐</div>
+    <div class="pixel-decoration pixel-star-2">✨</div>
+    
+    <!-- 主容器 -->
+    <div class="main-container">
+        <div class="pixel-dialog">
+            <h1 class="pixel-title" id="cover-title">像素风封面</h1>
+            
+            <div class="content-area">
+                <div class="content-placeholder" id="content-text">
+                    ✨ 欢迎来到像素世界 ✨<br>
+                    💫 创意无限 · 🎨 风格独特 · 🌟 个性十足<br>
+                    <br>
+                    预留内容区域<br>
+                    可自由添加文字和装饰元素
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function parseMarkdown(text) {
+            text = text.replace(/\*\*(.+?)\*\*/g, '<strong style="color: #ff1493; font-size: 1.2em;">$1</strong>');
+            text = text.replace(/__(.+?)__/g, '<span style="background: linear-gradient(45deg, #ff1493, #ffc0cb); color: white; padding: 0.2em 0.4em; border-radius: 4px;">$1</span>');
+            text = text.replace(/<u>(.+?)<\/u>/g, '<span style="border-bottom: 4px solid #ff1493; padding-bottom: 2px;">$1</span>');
+            text = text.replace(/\n/g, '<br>');
+            return text;
+        }
+        
+        // 获取URL参数
+        const params = new URLSearchParams(window.location.search);
+        const title = params.get('title') || '像素风封面';
+        const content = params.get('content') || '';
+        
+        // 设置标题
+        document.getElementById('cover-title').innerHTML = parseMarkdown(title);
+        
+        // 设置内容
+        if (content) {
+            document.getElementById('content-text').innerHTML = parseMarkdown(content);
+        }
+        
+        // 添加页面加载动画
+        window.addEventListener('load', () => {
+            const dialog = document.querySelector('.pixel-dialog');
+           
